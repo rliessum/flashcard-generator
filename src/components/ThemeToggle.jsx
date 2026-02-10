@@ -17,7 +17,7 @@ function MoonIcon(props) {
   )
 }
 
-export default function ThemeToggle() {
+const ThemeToggle = React.memo(function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem('fc_theme') || 'light'
@@ -57,4 +57,6 @@ export default function ThemeToggle() {
       )}
     </button>
   )
-}
+})
+
+export default ThemeToggle

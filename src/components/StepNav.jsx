@@ -8,7 +8,7 @@ const steps = [
   { key: 3, labelKey: 'step3Label', titleKey: 'step3Title' },
 ]
 
-export default function StepNav({ currentStep, goToStep }) {
+const StepNav = React.memo(function StepNav({ currentStep, goToStep }) {
   const { t } = useI18n()
 
   return (
@@ -49,4 +49,6 @@ export default function StepNav({ currentStep, goToStep }) {
       </ol>
     </nav>
   )
-}
+})
+
+export default StepNav

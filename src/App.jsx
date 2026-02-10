@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
-import { LANGS, I18N, t } from './js/i18n'
 import { parseCSV, countDuplicates, buildCSVString } from './js/csv'
-import { shuffle as shuffleArray, swapSides, escapeHtml, csvEscape } from './js/utils'
+import { shuffle as shuffleArray, swapSides, csvEscape } from './js/utils'
+import { buildDuplexHTML } from './js/cards'
 import { I18nProvider, useI18n } from './hooks/useI18n'
 import { ToastProvider, useToast } from './hooks/useToast'
 import StepNav from './components/StepNav'
@@ -23,7 +23,7 @@ function StepLoadingFallback() {
 }
 
 function AppInner() {
-  const { lang, setLang, t } = useI18n()
+  const { lang, t } = useI18n()
   const { addToast } = useToast()
 
   // ── State ──────────────────────────────────────────────────
@@ -41,7 +41,6 @@ function AppInner() {
   })
 
   const prevCardsRef = useRef(null)
-  const printAreaRef = useRef(null)
 
   const cardsPerPage = gridLayout === '2x3' ? 6 : 8
 
@@ -74,9 +73,9 @@ function AppInner() {
       }
       // Check duplicates on first forward move
       if (step === 2 && currentStep === 1) {
-        const dupes = countDuplicates(cards.length ? cards : collectCards())
+        const dupes = countDuplicates(cards)
         if (dupes > 0) addToast(t('dupesDetected', dupes), 'warning')
-        addToast(t('generatedCards', (cards.length || collectCards().length)), 'success')
+        addToast(t('generatedCards', cards.length), 'success')
       }
     }
 
@@ -145,40 +144,10 @@ function AppInner() {
 
   // ── Print ──────────────────────────────────────────────────
   const handlePrint = useCallback(() => {
-    const cols = 2
-    const rows = cardsPerPage / cols
-    const pages = Math.ceil(flashcards.length / cardsPerPage)
     const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4'
-
-    // Build duplex HTML
-    let html = ''
-    for (let p = 0; p < pages; p++) {
-      const pageCards = Array.from({ length: cardsPerPage }, (_, i) => {
-        const idx = p * cardsPerPage + i
-        return idx < flashcards.length ? flashcards[idx] : null
-      })
-
-      // Front
-      html += `<div class="flashcard-container ${gridCls}">`
-      pageCards.forEach(c => {
-        html += c
-          ? `<div class="flashcard flashcard-front" style="font-size:${printFontSize}pt">${escapeHtml(c.front)}</div>`
-          : '<div class="flashcard"></div>'
-      })
-      html += '</div>'
-
-      // Back (mirrored)
-      html += `<div class="flashcard-container ${gridCls}">`
-      for (let r = 0; r < rows; r++) {
-        for (let c = cols - 1; c >= 0; c--) {
-          const card = pageCards[r * cols + c]
-          html += card
-            ? `<div class="flashcard flashcard-back" style="font-size:${printFontSize}pt">${escapeHtml(card.back)}</div>`
-            : '<div class="flashcard"></div>'
-        }
-      }
-      html += '</div>'
-    }
+    const html = buildDuplexHTML(flashcards, {
+      cardsPerPage, gridLayout, fontSize: printFontSize,
+    })
 
     const doc = `<!DOCTYPE html>
 <html lang="${lang}">

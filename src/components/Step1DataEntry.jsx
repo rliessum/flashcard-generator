@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { useToast } from '../hooks/useToast'
 import { Button } from './catalyst/button'
@@ -46,7 +46,7 @@ function XIcon(props) {
 }
 
 // ── Manual Card Row ──────────────────────────────────────────
-function CardRow({ index, card, onChange, onRemove, canRemove, frontPlaceholder, backPlaceholder, removePlaceholder }) {
+const CardRow = React.memo(function CardRow({ index, card, onChange, onRemove, canRemove, frontPlaceholder, backPlaceholder, removePlaceholder }) {
   return (
     <div className="flex gap-2 items-center group" role="listitem">
       <span className="w-6 text-center shrink-0 text-xs font-medium text-zinc-400 dark:text-zinc-500 hidden sm:block">
@@ -86,14 +86,14 @@ function CardRow({ index, card, onChange, onRemove, canRemove, frontPlaceholder,
       </button>
     </div>
   )
-}
+})
 
 // ── Drop Zone ────────────────────────────────────────────────
 function DropZone({ onFile }) {
   const { t } = useI18n()
   const { addToast } = useToast()
   const fileRef = useRef(null)
-  const [dragOver, setDragOver] = React.useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   const handleFile = useCallback((file) => {
     if (!/\.(csv|tsv|txt)$/i.test(file.name)) {
@@ -159,7 +159,7 @@ export default function Step1DataEntry({
 }) {
   const { t } = useI18n()
   const { addToast } = useToast()
-  const [pasteText, setPasteText] = React.useState('')
+  const [pasteText, setPasteText] = useState('')
   const manualListRef = useRef(null)
 
   const updateCard = useCallback((index, field, value) => {

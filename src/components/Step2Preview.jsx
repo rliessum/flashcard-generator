@@ -41,10 +41,11 @@ function ChevronRightIcon(props) {
 }
 
 // ── Flashcard Preview Grid ───────────────────────────────────
-function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize }) {
+const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize }) {
   const [flippedCards, setFlippedCards] = useState(new Set())
   const [showSide, setShowSide] = useState('front') // 'front' | 'back' | null
   const { t } = useI18n()
+  const fontStyle = useMemo(() => ({ fontSize: `${fontSize}pt` }), [fontSize])
 
   const pages = Math.ceil(flashcards.length / cardsPerPage)
   const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4'
@@ -136,13 +137,13 @@ function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize }) {
                 <div className="flip-card-inner">
                   <div
                     className="flashcard flashcard-front bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700"
-                    style={{ fontSize: `${fontSize}pt` }}
+                    style={fontStyle}
                   >
                     {card.front}
                   </div>
                   <div
                     className="flashcard flashcard-back bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700"
-                    style={{ fontSize: `${fontSize}pt` }}
+                    style={fontStyle}
                   >
                     {card.back}
                   </div>
@@ -154,7 +155,7 @@ function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize }) {
       ))}
     </div>
   )
-}
+})
 
 // ── Main Step 2 Component ────────────────────────────────────
 export default function Step2Preview({
@@ -169,6 +170,9 @@ export default function Step2Preview({
   goToStep,
 }) {
   const { t } = useI18n()
+
+  const goBack = useCallback(() => goToStep(1), [goToStep])
+  const goForward = useCallback(() => goToStep(3), [goToStep])
 
   return (
     <div className="space-y-6">
@@ -240,11 +244,11 @@ export default function Step2Preview({
 
       {/* ── Step Actions ──────────────────────────────────── */}
       <div className="flex justify-between items-center gap-3 pt-2">
-        <Button outline onClick={() => goToStep(1)}>
+        <Button outline onClick={goBack}>
           <ChevronLeftIcon data-slot="icon" className="w-4 h-4" />
           {t('backData')}
         </Button>
-        <Button color="dark/zinc" onClick={() => goToStep(3)}>
+        <Button color="dark/zinc" onClick={goForward}>
           {t('nextPrint')}
           <ChevronRightIcon data-slot="icon" className="w-4 h-4" />
         </Button>

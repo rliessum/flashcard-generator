@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { Button } from './catalyst/button'
 import { Subheading } from './catalyst/heading'
@@ -41,6 +41,8 @@ export default function Step3Print({
   goToStep,
 }) {
   const { t } = useI18n()
+
+  const goBack = useCallback(() => goToStep(2), [goToStep])
 
   const stats = useMemo(() => {
     const pages = Math.ceil(flashcards.length / cardsPerPage)
@@ -97,7 +99,7 @@ export default function Step3Print({
 
       {/* ── Step Actions ──────────────────────────────────── */}
       <div className="flex justify-between items-center gap-3 pt-2">
-        <Button outline onClick={() => goToStep(2)}>
+        <Button outline onClick={goBack}>
           <ChevronLeftIcon data-slot="icon" className="w-4 h-4" />
           {t('backPreview')}
         </Button>

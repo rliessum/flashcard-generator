@@ -8,10 +8,23 @@ coverage/
 *.br
 
 # Local Netlify folder
-.netlify
+.netlify/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # OS files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Editor
 *.swp
@@ -19,3 +32,5 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace

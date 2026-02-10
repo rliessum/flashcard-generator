@@ -34,3 +34,6 @@ Desktop.ini
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# catalyst-ui-kit
+catalyst-ui-kit/

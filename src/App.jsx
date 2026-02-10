@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import { LANGS, I18N, t } from './js/i18n'
 import { parseCSV, countDuplicates, buildCSVString } from './js/csv'
 import { shuffle as shuffleArray, swapSides, escapeHtml, csvEscape } from './js/utils'
@@ -6,11 +6,21 @@ import { I18nProvider, useI18n } from './hooks/useI18n'
 import { ToastProvider, useToast } from './hooks/useToast'
 import StepNav from './components/StepNav'
 import Step1DataEntry from './components/Step1DataEntry'
-import Step2Preview from './components/Step2Preview'
-import Step3Print from './components/Step3Print'
 import ThemeToggle from './components/ThemeToggle'
 import LanguagePicker from './components/LanguagePicker'
 import ToastContainer from './components/ToastContainer'
+
+// Lazy-loaded step components (only loaded when the user navigates to them)
+const Step2Preview = lazy(() => import('./components/Step2Preview'))
+const Step3Print = lazy(() => import('./components/Step3Print'))
+
+function StepLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-800 dark:border-zinc-600 dark:border-t-zinc-200" />
+    </div>
+  )
+}
 
 function AppInner() {
   const { lang, setLang, t } = useI18n()
@@ -253,28 +263,32 @@ function AppInner() {
           )}
 
           {currentStep === 2 && (
-            <Step2Preview
-              flashcards={flashcards}
-              printFontSize={printFontSize}
-              setPrintFontSize={setPrintFontSize}
-              gridLayout={gridLayout}
-              setGridLayout={setGridLayout}
-              cardsPerPage={cardsPerPage}
-              onShuffle={handleShuffle}
-              onSwap={handleSwap}
-              goToStep={goToStep}
-            />
+            <Suspense fallback={<StepLoadingFallback />}>
+              <Step2Preview
+                flashcards={flashcards}
+                printFontSize={printFontSize}
+                setPrintFontSize={setPrintFontSize}
+                gridLayout={gridLayout}
+                setGridLayout={setGridLayout}
+                cardsPerPage={cardsPerPage}
+                onShuffle={handleShuffle}
+                onSwap={handleSwap}
+                goToStep={goToStep}
+              />
+            </Suspense>
           )}
 
           {currentStep === 3 && (
-            <Step3Print
-              flashcards={flashcards}
-              cardsPerPage={cardsPerPage}
-              onPrint={handlePrint}
-              onExportCSV={handleExportCSV}
-              onStartOver={handleStartOver}
-              goToStep={goToStep}
-            />
+            <Suspense fallback={<StepLoadingFallback />}>
+              <Step3Print
+                flashcards={flashcards}
+                cardsPerPage={cardsPerPage}
+                onPrint={handlePrint}
+                onExportCSV={handleExportCSV}
+                onStartOver={handleStartOver}
+                goToStep={goToStep}
+              />
+            </Suspense>
           )}
         </div>
 

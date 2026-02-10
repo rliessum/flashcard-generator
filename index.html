@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+    <title>Flashcard Generator</title>
+    <meta name="description" content="Generate duplex-ready flashcards from CSV or manual entry. Print double-sided with perfect alignment.">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-100 transition-colors duration-200">
+    <script>
+    // Apply saved theme immediately to prevent flash of wrong mode
+    (function() {
+      var theme;
+      try { theme = localStorage.getItem('fc_theme'); } catch(e) {}
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.body.style.backgroundColor = '#09090b';
+        document.body.style.color = '#fafafa';
+      }
+    })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+    </script>
+</body>
+</html>

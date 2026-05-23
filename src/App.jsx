@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react'
+import React, { useState, useCallback, lazy, Suspense } from 'react'
 import { parseCSV, countDuplicates, buildCSVString } from './js/csv'
 import { shuffle as shuffleArray, swapSides, csvEscape, escapeHtml, exceedsCsvLimit } from './js/utils'
 import { isSupported } from './js/i18n'
 import { buildDuplexHTML } from './js/cards'
 import { I18nProvider, useI18n } from './hooks/useI18n'
 import { ToastProvider, useToast } from './hooks/useToast'
+import { useFlashcards } from './hooks/useFlashcards'
 import StepNav from './components/StepNav'
 import Step1DataEntry from './components/Step1DataEntry'
 import ThemeToggle from './components/ThemeToggle'
@@ -30,47 +31,25 @@ function AppInner() {
   const { addToast } = useToast()
 
   // ── State ──────────────────────────────────────────────────
-  const [flashcards, setFlashcards] = useState([])
   const [currentStep, setCurrentStep] = useState(1)
   const [printFontSize, setPrintFontSize] = useState(18)
   const [gridLayout, setGridLayout] = useState('2x4')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
-  const [manualCards, setManualCards] = useState(() => {
-    const empty = [{ front: '', back: '' }]
-    try {
-      const parsed = JSON.parse(localStorage.getItem('fc_manual') || '[]')
-      // Reject anything that isn't a strictly-shaped {front, back} array — guards
-      // against tampered localStorage values being interpreted as cards.
-      if (!Array.isArray(parsed)) return empty
-      const sanitized = parsed
-        .filter((c) => c && typeof c.front === 'string' && typeof c.back === 'string')
-        .map((c) => ({ front: c.front, back: c.back }))
-      return sanitized.length ? sanitized : empty
-    } catch {
-      return empty
-    }
-  })
-
-  // True when any card data exists (manual entries with content OR generated cards)
-  const hasAnyCards = flashcards.length > 0 ||
-    manualCards.some(c => c.front.trim() || c.back.trim())
+  const {
+    flashcards,
+    setFlashcards,
+    manualCards,
+    setManualCards,
+    selectedIconId,
+    setSelectedIconId,
+    collectCards,
+    clearAllCards,
+    hasAnyCards,
+  } = useFlashcards()
 
   const cardsPerPage = gridLayout === '2x3' ? 6 : 8
 
-  // Auto-save manual cards
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try { localStorage.setItem('fc_manual', JSON.stringify(manualCards)) } catch {}
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [manualCards])
-
   // ── Step navigation ────────────────────────────────────────
-  const collectCards = useCallback(() => {
-    return manualCards.filter(c => c.front.trim() && c.back.trim())
-      .map(c => ({ front: c.front.trim(), back: c.back.trim() }))
-  }, [manualCards])
-
   const goToStep = useCallback((step) => {
     if (step < 1 || step > 3) return
 
@@ -155,21 +134,19 @@ function AppInner() {
     const totalCleared = flashcards.length +
       manualCards.filter(c => c.front.trim() || c.back.trim()).length
 
-    setFlashcards([])
-    setManualCards([{ front: '', back: '' }])
-    try { localStorage.removeItem('fc_manual') } catch {}
+    clearAllCards()
     setCurrentStep(1)
     setShowClearConfirm(false)
     if (totalCleared > 0) {
       addToast(t('clearedCards', totalCleared), 'warning')
     }
-  }, [flashcards, manualCards, addToast, t])
+  }, [flashcards, manualCards, clearAllCards, addToast, t])
 
   // ── Print ──────────────────────────────────────────────────
   const handlePrint = useCallback(() => {
     const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4'
     const html = buildDuplexHTML(flashcards, {
-      cardsPerPage, gridLayout, fontSize: printFontSize,
+      cardsPerPage, gridLayout, fontSize: printFontSize, iconId: selectedIconId,
     })
 
     const printLang = isSupported(lang) ? lang : 'en'
@@ -194,10 +171,27 @@ function AppInner() {
   .flashcard {
     width: 100%; height: 100%;
     border: 1px solid #000;
+    position: relative;
     display: flex; align-items: center; justify-content: center;
     text-align: center; padding: 8mm;
     page-break-inside: avoid;
     color: #000; font-family: inherit;
+  }
+  .flashcard-text {
+    display: block;
+    max-width: 100%;
+  }
+  .flashcard-icon {
+    position: absolute;
+    top: 4mm;
+    right: 4mm;
+    width: 6mm;
+    height: 6mm;
+    color: #52525b;
+  }
+  .flashcard-icon svg {
+    width: 100%;
+    height: 100%;
   }
   .flashcard-front { background: #fff; }
   .flashcard-back  { background: #f5f5f5; }
@@ -232,7 +226,7 @@ function AppInner() {
     } else {
       win.addEventListener('load', () => { triggerPrint(); setTimeout(cleanup, 5000) }, { once: true })
     }
-  }, [flashcards, cardsPerPage, gridLayout, printFontSize, lang, t, addToast])
+  }, [flashcards, cardsPerPage, gridLayout, printFontSize, selectedIconId, lang, t, addToast])
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-100 font-sans transition-colors duration-200">
@@ -265,6 +259,8 @@ function AppInner() {
               goToStep={goToStep}
               collectCards={collectCards}
               setFlashcards={setFlashcards}
+              selectedIconId={selectedIconId}
+              setSelectedIconId={setSelectedIconId}
             />
           )}
 
@@ -281,6 +277,7 @@ function AppInner() {
                 onSwap={handleSwap}
                 onClearAll={requestClearAll}
                 goToStep={goToStep}
+                selectedIconId={selectedIconId}
               />
             </Suspense>
           )}

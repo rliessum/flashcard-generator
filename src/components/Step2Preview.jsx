@@ -5,6 +5,7 @@ import { Select } from './catalyst/select'
 import { Heading, Subheading } from './catalyst/heading'
 import { Badge } from './catalyst/badge'
 import { escapeHtml } from '../js/utils'
+import HeroiconGlyph from './HeroiconGlyph'
 import clsx from 'clsx'
 
 // Icons
@@ -41,7 +42,7 @@ function ChevronRightIcon(props) {
 }
 
 // ── Flashcard Preview Grid ───────────────────────────────────
-const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize }) {
+const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize, selectedIconId }) {
   const [flippedCards, setFlippedCards] = useState(new Set())
   const [showSide, setShowSide] = useState('front') // 'front' | 'back' | null
   const { t } = useI18n()
@@ -139,13 +140,19 @@ const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPa
                     className="flashcard flashcard-front bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700"
                     style={fontStyle}
                   >
-                    {card.front}
+                    <span className="flashcard-text">{card.front}</span>
+                    <span className="flashcard-icon text-zinc-300 dark:text-zinc-600">
+                      <HeroiconGlyph iconId={selectedIconId} className="w-4 h-4" />
+                    </span>
                   </div>
                   <div
                     className="flashcard flashcard-back bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700"
                     style={fontStyle}
                   >
-                    {card.back}
+                    <span className="flashcard-text">{card.back}</span>
+                    <span className="flashcard-icon text-zinc-300 dark:text-zinc-600">
+                      <HeroiconGlyph iconId={selectedIconId} className="w-4 h-4" />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -169,6 +176,7 @@ export default function Step2Preview({
   onSwap,
   onClearAll,
   goToStep,
+  selectedIconId,
 }) {
   const { t } = useI18n()
 
@@ -212,7 +220,7 @@ export default function Step2Preview({
               value={gridLayout}
               onChange={e => setGridLayout(e.target.value)}
               aria-label="Grid layout"
-              className="!w-auto"
+              className="w-auto!"
             >
               <option value="2x4">{t('grid2x4')}</option>
               <option value="2x3">{t('grid2x3')}</option>
@@ -241,6 +249,7 @@ export default function Step2Preview({
         cardsPerPage={cardsPerPage}
         gridLayout={gridLayout}
         fontSize={printFontSize}
+        selectedIconId={selectedIconId}
       />
 
       {/* ── Step Actions ──────────────────────────────────── */}

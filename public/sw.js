@@ -1,19 +1,13 @@
 // Flashcard Generator — Service Worker
-// Cache-first for app shell, network-first for external resources
+// Navigation network-first, static assets stale-while-revalidate
 
-const CACHE_NAME = 'flashcards-v4';
+const CACHE_NAME = 'flashcards-vBUILD_HASH';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/favicon-32.png',
-  '/icons/favicon-16.png',
-  '/icons/apple-touch-icon.png',
-];
-const EXTERNAL_URLS = [
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  '/icons/icon.svg',
+  '/icons/icon-maskable.svg',
 ];
 
 // Install — pre-cache app shell
@@ -58,18 +52,40 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // App shell: cache-first
-  if (url.origin === self.location.origin) {
+  // HTML shell: network-first to avoid stale app shell after deployments.
+  if (
+    e.request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html'
+  ) {
     e.respondWith(
-      caches.match(e.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(e.request).then((response) => {
-          if (response.ok && response.type === 'basic') {
+      fetch(e.request)
+        .then((response) => {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           }
           return response;
-        });
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // App assets: stale-while-revalidate
+  if (url.origin === self.location.origin) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => {
+        const fetched = fetch(e.request)
+          .then((response) => {
+            if (response.ok && response.type === 'basic') {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || fetched;
       })
     );
     return;

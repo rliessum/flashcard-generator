@@ -79,6 +79,18 @@
     overflow: hidden; word-break: break-word;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
+  .flashcard-text {
+    max-width: 100%;
+  }
+  .flashcard-icon {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
   .flip-card:hover .flashcard {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }

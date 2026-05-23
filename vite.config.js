@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import compression from 'vite-plugin-compression';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export default defineConfig({
   root: '.',
@@ -25,21 +27,24 @@ export default defineConfig({
       threshold: 1024,
     }),
 
-    // Copy service worker and handle cache busting
+    // Rewrite the copied service worker cache name after build.
     {
       name: 'sw-cache-bust',
-      generateBundle(_, bundle) {
+      apply: 'build',
+      async writeBundle(options, bundle) {
         const assetNames = Object.keys(bundle).sort().join(',');
         const hash = simpleHash(assetNames);
-        const swContent = bundle['sw.js'];
-        if (swContent && swContent.type === 'asset') {
-          const src = typeof swContent.source === 'string'
-            ? swContent.source
-            : new TextDecoder().decode(swContent.source);
-          swContent.source = src.replace(
-            /flashcards-v\d+/,
+        const outDir = options.dir || 'dist';
+        const swPath = join(outDir, 'sw.js');
+        try {
+          const swSource = await readFile(swPath, 'utf8');
+          const nextSource = swSource.replace(
+            /flashcards-v[A-Za-z0-9_-]+/,
             `flashcards-v${hash}`
           );
+          await writeFile(swPath, nextSource, 'utf8');
+        } catch {
+          // Service worker is optional during local builds.
         }
       },
     },

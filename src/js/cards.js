@@ -2,6 +2,7 @@
  * Card generation and layout module for the Flashcard Generator
  */
 import { escapeHtml, clampFontSize } from './utils.js';
+import { DEFAULT_HEROICON_ID, getHeroiconPrintMarkup } from './heroicons.js';
 
 /**
  * Get cards for a given page index
@@ -24,11 +25,12 @@ export function getPageCards(flashcards, pageIndex, cardsPerPage) {
  * @param {number} fontSize
  * @returns {string}
  */
-export function cardHTML(card, side, fontSize) {
+export function cardHTML(card, side, fontSize, iconId = DEFAULT_HEROICON_ID) {
   if (!card) return '<div class="flashcard"></div>';
   const cls = side === 'front' ? 'flashcard-front' : 'flashcard-back';
   const pt = clampFontSize(fontSize);
-  return `<div class="flashcard ${cls}" style="font-size:${pt}pt">${escapeHtml(card[side])}</div>`;
+  const iconMarkup = getHeroiconPrintMarkup(iconId);
+  return `<div class="flashcard ${cls}" style="font-size:${pt}pt">${iconMarkup}<span class="flashcard-text">${escapeHtml(card[side])}</span></div>`;
 }
 
 /**
@@ -79,7 +81,7 @@ export function buildPageHTML(flashcards, side, { cardsPerPage, gridLayout, font
  * @param {number} opts.cols
  * @returns {string}
  */
-export function buildDuplexHTML(flashcards, { cardsPerPage, gridLayout, fontSize, cols = 2 }) {
+export function buildDuplexHTML(flashcards, { cardsPerPage, gridLayout, fontSize, cols = 2, iconId = DEFAULT_HEROICON_ID }) {
   const pages = Math.ceil(flashcards.length / cardsPerPage);
   const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4';
   const rows = cardsPerPage / cols;
@@ -88,13 +90,13 @@ export function buildDuplexHTML(flashcards, { cardsPerPage, gridLayout, fontSize
     const cards = getPageCards(flashcards, p, cardsPerPage);
     // Front page
     html += `<div class="flashcard-container ${gridCls}">`;
-    html += cards.map((c) => cardHTML(c, 'front', fontSize)).join('');
+    html += cards.map((c) => cardHTML(c, 'front', fontSize, iconId)).join('');
     html += '</div>';
     // Back page (mirrored horizontally for duplex printing)
     html += `<div class="flashcard-container ${gridCls}">`;
     for (let r = 0; r < rows; r++) {
       for (let c = cols - 1; c >= 0; c--) {
-        html += cardHTML(cards[r * cols + c], 'back', fontSize);
+        html += cardHTML(cards[r * cols + c], 'back', fontSize, iconId);
       }
     }
     html += '</div>';

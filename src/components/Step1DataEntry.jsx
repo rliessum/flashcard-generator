@@ -9,6 +9,7 @@ import { Text } from './catalyst/text'
 import { Divider } from './catalyst/divider'
 import { Badge } from './catalyst/badge'
 import clsx from 'clsx'
+import { MAX_CSV_BYTES, exceedsCsvLimit } from '../js/utils'
 
 // Icons
 function UploadIcon(props) {
@@ -100,6 +101,10 @@ function DropZone({ onFile }) {
       addToast(t('dropFileError'), 'error')
       return
     }
+    if (file.size > MAX_CSV_BYTES) {
+      addToast(t('csvTooLarge'), 'error')
+      return
+    }
     const reader = new FileReader()
     reader.onload = (e) => onFile(e.target.result)
     reader.readAsText(file)
@@ -151,7 +156,8 @@ export default function Step1DataEntry({
   setManualCards,
   onCSVParsed,
   onExportCSV,
-  onClear,
+  onClearAll,
+  hasAnyCards,
   flashcards,
   goToStep,
   collectCards,
@@ -196,6 +202,10 @@ export default function Step1DataEntry({
   const handlePaste = useCallback((e) => {
     const raw = (e.clipboardData || window.clipboardData).getData('text')
     if (!raw.includes('\t') && !raw.includes('\n')) return
+    if (exceedsCsvLimit(raw)) {
+      addToast(t('csvTooLarge'), 'error')
+      return
+    }
     e.preventDefault()
     const lines = raw.trim().split(/\r?\n/).map(l => l.split('\t'))
     const newCards = lines
@@ -210,6 +220,10 @@ export default function Step1DataEntry({
   const handleParsePaste = useCallback(() => {
     if (!pasteText.trim()) {
       addToast(t('pasteEmpty') || 'Paste some CSV data first', 'warning')
+      return
+    }
+    if (exceedsCsvLimit(pasteText)) {
+      addToast(t('csvTooLarge'), 'error')
       return
     }
     onCSVParsed(pasteText)
@@ -322,10 +336,10 @@ export default function Step1DataEntry({
           <Button
             color="red"
             outline
-            onClick={onClear}
-            disabled={!flashcards.length}
+            onClick={onClearAll}
+            disabled={!hasAnyCards}
           >
-            {t('clear')}
+            {t('clearAll')}
           </Button>
           <Button color="dark/zinc" onClick={handleNextStep}>
             {t('nextPreview')}

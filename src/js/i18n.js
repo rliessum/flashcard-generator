@@ -57,6 +57,7 @@ export const I18N = {
     enterOneCard: 'Enter at least one card with both sides filled',
     noCardsExport: 'No cards to export',
     dropFileError: 'Please drop a CSV, TSV, or TXT file',
+    csvTooLarge: 'File is too large (max 2 MB)',
     dupesDetected: (n) => `${n} duplicate card${n > 1 ? 's' : ''} detected`,
     popupBlocked: 'Popup blocked. Allow popups to print.',
     counterText: (cards, pages, sheets) =>
@@ -83,6 +84,11 @@ export const I18N = {
     pastePlaceholder: 'front,back\nhello,hallo\ngoodbye,tot ziens',
     loadPasted: 'Load Pasted Data',
     pasteEmpty: 'Paste some CSV data first',
+    clearAll: 'Clear All',
+    confirmClearTitle: 'Clear all cards?',
+    confirmClearMessage:
+      'This will remove all manual entries, generated cards, and the saved draft from your browser. This action cannot be undone.',
+    cancel: 'Cancel',
   },
   nl: {
     title: 'Flashcard Generator',
@@ -130,6 +136,7 @@ export const I18N = {
     enterOneCard: 'Vul minstens één kaart met beide zijden in',
     noCardsExport: 'Geen kaarten om te exporteren',
     dropFileError: 'Sleep een CSV-, TSV- of TXT-bestand',
+    csvTooLarge: 'Bestand is te groot (max. 2 MB)',
     dupesDetected: (n) => `${n} dubbele kaart${n > 1 ? 'en' : ''} gevonden`,
     popupBlocked: 'Pop-up geblokkeerd. Sta pop-ups toe om te printen.',
     counterText: (cards, pages, sheets) =>
@@ -155,6 +162,11 @@ export const I18N = {
     pastePlaceholder: 'voorkant,achterkant\nhello,hallo\ngoodbye,tot ziens',
     loadPasted: 'Geplakte Data Laden',
     pasteEmpty: 'Plak eerst CSV-gegevens',
+    clearAll: 'Alles Wissen',
+    confirmClearTitle: 'Alle kaarten wissen?',
+    confirmClearMessage:
+      'Dit verwijdert alle handmatige invoer, gegenereerde kaarten en het opgeslagen concept uit je browser. Deze actie kan niet ongedaan worden gemaakt.',
+    cancel: 'Annuleren',
   },
   de: {
     title: 'Flashcard Generator',
@@ -202,6 +214,7 @@ export const I18N = {
     enterOneCard: 'Mindestens eine Karte mit beiden Seiten ausfüllen',
     noCardsExport: 'Keine Karten zum Exportieren',
     dropFileError: 'Bitte eine CSV-, TSV- oder TXT-Datei ablegen',
+    csvTooLarge: 'Datei ist zu groß (max. 2 MB)',
     dupesDetected: (n) => `${n} doppelte Karte${n > 1 ? 'n' : ''} erkannt`,
     popupBlocked: 'Popup blockiert. Pop-ups zum Drucken erlauben.',
     counterText: (cards, pages, sheets) =>
@@ -227,6 +240,11 @@ export const I18N = {
     pastePlaceholder: 'Vorderseite,Rückseite\nhello,hallo\ngoodbye,auf Wiedersehen',
     loadPasted: 'Eingefügte Daten Laden',
     pasteEmpty: 'Bitte zuerst CSV-Daten einfügen',
+    clearAll: 'Alles Löschen',
+    confirmClearTitle: 'Alle Karten löschen?',
+    confirmClearMessage:
+      'Damit werden alle manuellen Eingaben, generierten Karten und der gespeicherte Entwurf aus deinem Browser entfernt. Diese Aktion kann nicht rückgängig gemacht werden.',
+    cancel: 'Abbrechen',
   },
   fr: {
     title: 'Flashcard Generator',
@@ -274,6 +292,7 @@ export const I18N = {
     enterOneCard: 'Saisissez au moins une carte avec les deux côtés remplis',
     noCardsExport: 'Aucune carte à exporter',
     dropFileError: 'Veuillez déposer un fichier CSV, TSV ou TXT',
+    csvTooLarge: 'Fichier trop volumineux (max. 2 Mo)',
     dupesDetected: (n) =>
       `${n} carte${n > 1 ? 's' : ''} en double détectée${n > 1 ? 's' : ''}`,
     popupBlocked: 'Pop-up bloquée. Autorisez les pop-ups pour imprimer.',
@@ -300,6 +319,11 @@ export const I18N = {
     pastePlaceholder: 'recto,verso\nhello,bonjour\ngoodbye,au revoir',
     loadPasted: 'Charger les Données Collées',
     pasteEmpty: "Collez d'abord des données CSV",
+    clearAll: 'Tout Effacer',
+    confirmClearTitle: 'Effacer toutes les cartes ?',
+    confirmClearMessage:
+      'Cela supprimera toutes les saisies manuelles, les cartes générées et le brouillon sauvegardé dans votre navigateur. Cette action est irréversible.',
+    cancel: 'Annuler',
   },
   es: {
     title: 'Flashcard Generator',
@@ -347,6 +371,7 @@ export const I18N = {
     enterOneCard: 'Introduce al menos una tarjeta con ambos lados completos',
     noCardsExport: 'No hay tarjetas para exportar',
     dropFileError: 'Por favor, suelta un archivo CSV, TSV o TXT',
+    csvTooLarge: 'Archivo demasiado grande (máx. 2 MB)',
     dupesDetected: (n) =>
       `${n} tarjeta${n > 1 ? 's' : ''} duplicada${n > 1 ? 's' : ''} detectada${n > 1 ? 's' : ''}`,
     popupBlocked: 'Pop-up bloqueada. Permite pop-ups para imprimir.',
@@ -373,6 +398,11 @@ export const I18N = {
     pastePlaceholder: 'frente,reverso\nhello,hola\ngoodbye,adiós',
     loadPasted: 'Cargar Datos Pegados',
     pasteEmpty: 'Primero pega datos CSV',
+    clearAll: 'Borrar Todo',
+    confirmClearTitle: '¿Borrar todas las tarjetas?',
+    confirmClearMessage:
+      'Esto eliminará todas las entradas manuales, las tarjetas generadas y el borrador guardado en tu navegador. Esta acción no se puede deshacer.',
+    cancel: 'Cancelar',
   },
 };
 

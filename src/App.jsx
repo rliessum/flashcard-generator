@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { parseCSV, countDuplicates, buildCSVString } from './js/csv'
-import { shuffle as shuffleArray, swapSides, csvEscape } from './js/utils'
+import { shuffle as shuffleArray, swapSides, csvEscape, escapeHtml, exceedsCsvLimit } from './js/utils'
+import { isSupported } from './js/i18n'
 import { buildDuplexHTML } from './js/cards'
 import { I18nProvider, useI18n } from './hooks/useI18n'
 import { ToastProvider, useToast } from './hooks/useToast'
@@ -9,6 +10,8 @@ import Step1DataEntry from './components/Step1DataEntry'
 import ThemeToggle from './components/ThemeToggle'
 import LanguagePicker from './components/LanguagePicker'
 import ToastContainer from './components/ToastContainer'
+import { Dialog, DialogActions, DialogDescription, DialogTitle } from './components/catalyst/dialog'
+import { Button } from './components/catalyst/button'
 
 // Lazy-loaded step components (only loaded when the user navigates to them)
 const Step2Preview = lazy(() => import('./components/Step2Preview'))
@@ -31,16 +34,26 @@ function AppInner() {
   const [currentStep, setCurrentStep] = useState(1)
   const [printFontSize, setPrintFontSize] = useState(18)
   const [gridLayout, setGridLayout] = useState('2x4')
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [manualCards, setManualCards] = useState(() => {
+    const empty = [{ front: '', back: '' }]
     try {
-      const saved = JSON.parse(localStorage.getItem('fc_manual') || '[]')
-      return saved.length ? saved : [{ front: '', back: '' }]
+      const parsed = JSON.parse(localStorage.getItem('fc_manual') || '[]')
+      // Reject anything that isn't a strictly-shaped {front, back} array — guards
+      // against tampered localStorage values being interpreted as cards.
+      if (!Array.isArray(parsed)) return empty
+      const sanitized = parsed
+        .filter((c) => c && typeof c.front === 'string' && typeof c.back === 'string')
+        .map((c) => ({ front: c.front, back: c.back }))
+      return sanitized.length ? sanitized : empty
     } catch {
-      return [{ front: '', back: '' }]
+      return empty
     }
   })
 
-  const prevCardsRef = useRef(null)
+  // True when any card data exists (manual entries with content OR generated cards)
+  const hasAnyCards = flashcards.length > 0 ||
+    manualCards.some(c => c.front.trim() || c.back.trim())
 
   const cardsPerPage = gridLayout === '2x3' ? 6 : 8
 
@@ -85,6 +98,10 @@ function AppInner() {
 
   // ── CSV handling ───────────────────────────────────────────
   const handleCSVParsed = useCallback((text) => {
+    if (exceedsCsvLimit(text)) {
+      addToast(t('csvTooLarge'), 'error')
+      return
+    }
     const result = parseCSV(text)
     if (result.error) {
       addToast(t(result.error), 'error')
@@ -127,20 +144,26 @@ function AppInner() {
     addToast(t('exportedCards', cards.length), 'success')
   }, [flashcards, collectCards, addToast, t])
 
-  const handleClear = useCallback(() => {
-    prevCardsRef.current = [...flashcards]
-    setFlashcards([])
-    addToast(t('clearedCards', prevCardsRef.current.length), 'warning')
-  }, [flashcards, addToast, t])
+  // Open the confirmation dialog; no-op when there's nothing to clear.
+  const requestClearAll = useCallback(() => {
+    if (!hasAnyCards) return
+    setShowClearConfirm(true)
+  }, [hasAnyCards])
 
-  const handleStartOver = useCallback(() => {
-    prevCardsRef.current = [...flashcards]
+  // Wipes every card source: generated cards, manual rows, and the saved draft.
+  const handleClearAll = useCallback(() => {
+    const totalCleared = flashcards.length +
+      manualCards.filter(c => c.front.trim() || c.back.trim()).length
+
     setFlashcards([])
+    setManualCards([{ front: '', back: '' }])
+    try { localStorage.removeItem('fc_manual') } catch {}
     setCurrentStep(1)
-    if (prevCardsRef.current.length) {
-      addToast(t('clearedCards', prevCardsRef.current.length), 'warning')
+    setShowClearConfirm(false)
+    if (totalCleared > 0) {
+      addToast(t('clearedCards', totalCleared), 'warning')
     }
-  }, [flashcards, addToast, t])
+  }, [flashcards, manualCards, addToast, t])
 
   // ── Print ──────────────────────────────────────────────────
   const handlePrint = useCallback(() => {
@@ -149,11 +172,12 @@ function AppInner() {
       cardsPerPage, gridLayout, fontSize: printFontSize,
     })
 
+    const printLang = isSupported(lang) ? lang : 'en'
     const doc = `<!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${printLang}">
 <head>
 <meta charset="UTF-8">
-<title>${t('title')}</title>
+<title>${escapeHtml(t('title'))}</title>
 <style>
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
@@ -182,19 +206,31 @@ function AppInner() {
 <body>${html}</body>
 </html>`
 
-    const win = window.open('', '_blank')
+    // Use a Blob URL instead of document.write — the popup loads its own
+    // same-origin document, so it inherits a strict CSP and avoids the
+    // document.write footgun.
+    const blob = new Blob([doc], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url, '_blank')
     if (!win) {
+      URL.revokeObjectURL(url)
       addToast(t('popupBlocked') || 'Popup blocked', 'error')
       return
     }
-    win.document.open()
-    win.document.write(doc)
-    win.document.close()
-    const printNow = () => { win.focus(); win.print() }
-    if (win.document.fonts?.ready) {
-      win.document.fonts.ready.then(printNow).catch(printNow)
+    const triggerPrint = () => {
+      const printNow = () => { win.focus(); win.print() }
+      if (win.document.fonts?.ready) {
+        win.document.fonts.ready.then(printNow).catch(printNow)
+      } else {
+        setTimeout(printNow, 100)
+      }
+    }
+    const cleanup = () => URL.revokeObjectURL(url)
+    if (win.document.readyState === 'complete') {
+      triggerPrint()
+      setTimeout(cleanup, 5000)
     } else {
-      setTimeout(printNow, 100)
+      win.addEventListener('load', () => { triggerPrint(); setTimeout(cleanup, 5000) }, { once: true })
     }
   }, [flashcards, cardsPerPage, gridLayout, printFontSize, lang, t, addToast])
 
@@ -223,7 +259,8 @@ function AppInner() {
               setManualCards={setManualCards}
               onCSVParsed={handleCSVParsed}
               onExportCSV={handleExportCSV}
-              onClear={handleClear}
+              onClearAll={requestClearAll}
+              hasAnyCards={hasAnyCards}
               flashcards={flashcards}
               goToStep={goToStep}
               collectCards={collectCards}
@@ -242,6 +279,7 @@ function AppInner() {
                 cardsPerPage={cardsPerPage}
                 onShuffle={handleShuffle}
                 onSwap={handleSwap}
+                onClearAll={requestClearAll}
                 goToStep={goToStep}
               />
             </Suspense>
@@ -254,7 +292,7 @@ function AppInner() {
                 cardsPerPage={cardsPerPage}
                 onPrint={handlePrint}
                 onExportCSV={handleExportCSV}
-                onStartOver={handleStartOver}
+                onClearAll={requestClearAll}
                 goToStep={goToStep}
               />
             </Suspense>
@@ -268,6 +306,19 @@ function AppInner() {
           </p>
         </footer>
       </div>
+
+      <Dialog open={showClearConfirm} onClose={setShowClearConfirm} size="md">
+        <DialogTitle>{t('confirmClearTitle')}</DialogTitle>
+        <DialogDescription>{t('confirmClearMessage')}</DialogDescription>
+        <DialogActions>
+          <Button plain onClick={() => setShowClearConfirm(false)}>
+            {t('cancel')}
+          </Button>
+          <Button color="red" onClick={handleClearAll}>
+            {t('clearAll')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ToastContainer />
     </div>

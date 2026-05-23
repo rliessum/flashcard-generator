@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, csvEscape, shuffle, swapSides } from '../src/js/utils.js';
+import {
+  escapeHtml,
+  csvEscape,
+  shuffle,
+  swapSides,
+  clampFontSize,
+  exceedsCsvLimit,
+  MAX_CSV_BYTES,
+} from '../src/js/utils.js';
 
 // ─── escapeHtml ───────────────────────────────────────────────────────────────
 
@@ -38,6 +46,36 @@ describe('escapeHtml', () => {
     expect(escapeHtml('<a href="x">&</a>')).toBe(
       '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;'
     );
+  });
+});
+
+// ─── clampFontSize ────────────────────────────────────────────────────────────
+
+describe('clampFontSize', () => {
+  it('clamps to min/max range', () => {
+    expect(clampFontSize(5)).toBe(10);
+    expect(clampFontSize(99)).toBe(28);
+    expect(clampFontSize(18)).toBe(18);
+  });
+
+  it('rounds fractional values', () => {
+    expect(clampFontSize(18.7)).toBe(19);
+  });
+
+  it('rejects non-numeric input', () => {
+    expect(clampFontSize('18pt; background:url(javascript:alert(1))')).toBe(10);
+    expect(clampFontSize(NaN)).toBe(10);
+  });
+});
+
+describe('exceedsCsvLimit', () => {
+  it('returns false under the limit', () => {
+    expect(exceedsCsvLimit('a,b\n')).toBe(false);
+  });
+
+  it('returns true over the limit', () => {
+    const big = 'x'.repeat(MAX_CSV_BYTES + 1);
+    expect(exceedsCsvLimit(big)).toBe(true);
   });
 });
 

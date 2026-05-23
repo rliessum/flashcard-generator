@@ -1,7 +1,7 @@
 /**
  * Card generation and layout module for the Flashcard Generator
  */
-import { escapeHtml } from './utils.js';
+import { escapeHtml, clampFontSize } from './utils.js';
 
 /**
  * Get cards for a given page index
@@ -27,7 +27,8 @@ export function getPageCards(flashcards, pageIndex, cardsPerPage) {
 export function cardHTML(card, side, fontSize) {
   if (!card) return '<div class="flashcard"></div>';
   const cls = side === 'front' ? 'flashcard-front' : 'flashcard-back';
-  return `<div class="flashcard ${cls}" style="font-size:${fontSize}pt">${escapeHtml(card[side])}</div>`;
+  const pt = clampFontSize(fontSize);
+  return `<div class="flashcard ${cls}" style="font-size:${pt}pt">${escapeHtml(card[side])}</div>`;
 }
 
 /**
@@ -40,7 +41,8 @@ export function previewCardHTML(card, fontSize) {
   if (!card) {
     return '<div class="flip-card"><div class="flip-card-inner"><div class="flashcard flashcard-front"></div><div class="flashcard flashcard-back"></div></div></div>';
   }
-  return `<div class="flip-card" title="Click to flip"><div class="flip-card-inner"><div class="flashcard flashcard-front" style="font-size:${fontSize}pt">${escapeHtml(card.front)}</div><div class="flashcard flashcard-back" style="font-size:${fontSize}pt">${escapeHtml(card.back)}</div></div></div>`;
+  const pt = clampFontSize(fontSize);
+  return `<div class="flip-card" title="Click to flip"><div class="flip-card-inner"><div class="flashcard flashcard-front" style="font-size:${pt}pt">${escapeHtml(card.front)}</div><div class="flashcard flashcard-back" style="font-size:${pt}pt">${escapeHtml(card.back)}</div></div></div>`;
 }
 
 /**

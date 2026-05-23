@@ -90,6 +90,12 @@ describe('cardHTML', () => {
     const html = cardHTML({ front: 'Tom & Jerry', back: 'test' }, 'front', 18);
     expect(html).toContain('Tom &amp; Jerry');
   });
+
+  it('sanitizes malicious fontSize values', () => {
+    const html = cardHTML({ front: 'x', back: 'y' }, 'front', '18pt; background:red');
+    expect(html).toContain('font-size:10pt');
+    expect(html).not.toContain('background');
+  });
 });
 
 // ─── previewCardHTML ──────────────────────────────────────────────────────────

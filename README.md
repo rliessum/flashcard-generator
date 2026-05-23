@@ -51,4 +51,8 @@ netlify deploy --prod
 
 ## License
 
-MIT
+Apache-2.0 — see [LICENSE](LICENSE).
+
+## Security
+
+Security policy and reporting instructions: [SECURITY.md](SECURITY.md).

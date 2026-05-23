@@ -167,6 +167,7 @@ export default function Step2Preview({
   cardsPerPage,
   onShuffle,
   onSwap,
+  onClearAll,
   goToStep,
 }) {
   const { t } = useI18n()
@@ -248,10 +249,15 @@ export default function Step2Preview({
           <ChevronLeftIcon data-slot="icon" className="w-4 h-4" />
           {t('backData')}
         </Button>
-        <Button color="dark/zinc" onClick={goForward}>
-          {t('nextPrint')}
-          <ChevronRightIcon data-slot="icon" className="w-4 h-4" />
-        </Button>
+        <div className="flex gap-3 items-center">
+          <Button color="red" outline onClick={onClearAll}>
+            {t('clearAll')}
+          </Button>
+          <Button color="dark/zinc" onClick={goForward}>
+            {t('nextPrint')}
+            <ChevronRightIcon data-slot="icon" className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )

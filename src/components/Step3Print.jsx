@@ -37,7 +37,7 @@ export default function Step3Print({
   cardsPerPage,
   onPrint,
   onExportCSV,
-  onStartOver,
+  onClearAll,
   goToStep,
 }) {
   const { t } = useI18n()
@@ -103,8 +103,8 @@ export default function Step3Print({
           <ChevronLeftIcon data-slot="icon" className="w-4 h-4" />
           {t('backPreview')}
         </Button>
-        <Button plain onClick={onStartOver}>
-          {t('startOver')}
+        <Button color="red" outline onClick={onClearAll}>
+          {t('clearAll')}
         </Button>
       </div>
     </div>

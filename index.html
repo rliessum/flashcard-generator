@@ -13,29 +13,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/theme-init.js"></script>
 </head>
 <body class="antialiased bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-100 transition-colors duration-200">
-    <script>
-    // Apply saved theme immediately to prevent flash of wrong mode
-    (function() {
-      var theme;
-      try { theme = localStorage.getItem('fc_theme'); } catch(e) {}
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.body.style.backgroundColor = '#09090b';
-        document.body.style.color = '#fafafa';
-      }
-    })();
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      });
-    }
-    </script>
+    <script src="/sw-register.js" defer></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "name": "ultimate-flashcards",
   "version": "2.0.0",
-  "description": "Ultimate Flashcards — generate duplex-ready flashcards from CSV or manual entry. Print double-sided with perfect alignment at ultimateflash.cards.",
+  "description": "Ultimate Flashcards — generate duplex-ready flashcards from CSV or manual entry. Print double-sided with perfect alignment at ultimateflashcards.com.",
   "type": "module",
   "scripts": {
     "dev": "vite",

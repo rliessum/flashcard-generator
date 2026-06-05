@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect, memo } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { useToast } from '../hooks/useToast'
 import { Button } from './catalyst/button'
@@ -48,7 +48,18 @@ function XIcon(props) {
 }
 
 // ── Manual Card Row ──────────────────────────────────────────
-const CardRow = React.memo(function CardRow({ index, card, onChange, onRemove, canRemove, frontPlaceholder, backPlaceholder, removePlaceholder }) {
+const CardRow = memo(function CardRow({
+  index,
+  card,
+  onChange,
+  onRemove,
+  canRemove,
+  frontPlaceholder,
+  backPlaceholder,
+  removePlaceholder,
+  onFocusField,
+  registerInputRef,
+}) {
   return (
     <div className="flex gap-2 items-center group" role="listitem">
       <span className="w-6 text-center shrink-0 text-xs font-medium text-zinc-400 dark:text-zinc-500 hidden sm:block">
@@ -60,6 +71,8 @@ const CardRow = React.memo(function CardRow({ index, card, onChange, onRemove, c
           placeholder={frontPlaceholder}
           value={card.front}
           onChange={e => onChange(index, 'front', e.target.value)}
+          onFocus={() => onFocusField(index, 'front')}
+          ref={(node) => registerInputRef(`${index}:front`, node)}
           aria-label={`Card ${index + 1} front`}
         />
       </div>
@@ -69,6 +82,8 @@ const CardRow = React.memo(function CardRow({ index, card, onChange, onRemove, c
           placeholder={backPlaceholder}
           value={card.back}
           onChange={e => onChange(index, 'back', e.target.value)}
+          onFocus={() => onFocusField(index, 'back')}
+          ref={(node) => registerInputRef(`${index}:back`, node)}
           aria-label={`Card ${index + 1} back`}
         />
       </div>
@@ -171,7 +186,10 @@ export default function Step1DataEntry({
   const [pasteText, setPasteText] = useState('')
   const [iconQuery, setIconQuery] = useState('')
   const manualListRef = useRef(null)
+  const cardInputRefs = useRef(new Map())
   const iconButtonRefs = useRef({})
+  const pendingSelectionRef = useRef(null) // { key, start, end } restored in useLayoutEffect
+  const [activeField, setActiveField] = useState({ index: 0, field: 'front' })
   const [focusedIconId, setFocusedIconId] = useState(selectedIconId)
   const filteredIconOptions = useMemo(() => {
     const query = iconQuery.trim().toLowerCase()
@@ -198,6 +216,37 @@ export default function Step1DataEntry({
     if (!activeIconId) return
     setFocusedIconId(activeIconId)
   }, [activeIconId])
+
+  // Keep activeField valid whenever manualCards changes length (handles external
+  // replacements from CSV load, clear, shuffle→manual sync, etc.).
+  useEffect(() => {
+    if (manualCards.length === 0) {
+      setActiveField({ index: 0, field: 'front' })
+      return
+    }
+    if (activeField.index >= manualCards.length) {
+      setActiveField((cur) => ({
+        index: manualCards.length - 1,
+        field: cur.field,
+      }))
+    }
+  }, [manualCards.length])
+
+  // Restore text selection after markup toolbar actions (more reliable than rAF).
+  useLayoutEffect(() => {
+    const pending = pendingSelectionRef.current
+    if (!pending) return
+    const target = cardInputRefs.current.get(pending.key)
+    if (target) {
+      try {
+        target.focus()
+        target.setSelectionRange(pending.start, pending.end)
+      } catch {
+        // Some inputs may not support setSelectionRange (e.g. during rapid unmounts).
+      }
+    }
+    pendingSelectionRef.current = null
+  })
 
   const moveIconFocus = useCallback((nextIconId) => {
     if (!nextIconId) return
@@ -244,8 +293,88 @@ export default function Step1DataEntry({
     setManualCards(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c))
   }, [setManualCards])
 
+  const registerInputRef = useCallback((key, node) => {
+    if (node) {
+      cardInputRefs.current.set(key, node)
+      return
+    }
+    cardInputRefs.current.delete(key)
+  }, [])
+
+  const applyInlineMarkup = useCallback((prefix, suffix, fallback = '') => {
+    if (!activeField) return
+    const { index, field } = activeField
+    const card = manualCards[index]
+    if (!card) return
+    const value = card[field] ?? ''
+    const input = cardInputRefs.current.get(`${index}:${field}`)
+    const selectionStart = input?.selectionStart ?? value.length
+    const selectionEnd = input?.selectionEnd ?? value.length
+    const selectedText = value.slice(selectionStart, selectionEnd) || fallback
+    const nextValue = `${value.slice(0, selectionStart)}${prefix}${selectedText}${suffix}${value.slice(selectionEnd)}`
+
+    updateCard(index, field, nextValue)
+
+    const nextStart = selectionStart + prefix.length
+    const nextEnd = nextStart + selectedText.length
+    pendingSelectionRef.current = { key: `${index}:${field}`, start: nextStart, end: nextEnd }
+  }, [activeField, manualCards, updateCard])
+
+  const applyLinkMarkup = useCallback(() => {
+    if (!activeField) return
+    const { index, field } = activeField
+    const card = manualCards[index]
+    if (!card) return
+    const value = card[field] ?? ''
+    const input = cardInputRefs.current.get(`${index}:${field}`)
+    const selectionStart = input?.selectionStart ?? value.length
+    const selectionEnd = input?.selectionEnd ?? value.length
+    const selectedText = value.slice(selectionStart, selectionEnd) || 'link'
+    const placeholderUrl = 'https://example.com'
+    const insertion = `[${selectedText}](${placeholderUrl})`
+    const nextValue = `${value.slice(0, selectionStart)}${insertion}${value.slice(selectionEnd)}`
+
+    updateCard(index, field, nextValue)
+
+    const urlStart = selectionStart + selectedText.length + 3
+    const urlEnd = urlStart + placeholderUrl.length
+    pendingSelectionRef.current = { key: `${index}:${field}`, start: urlStart, end: urlEnd }
+  }, [activeField, manualCards, updateCard])
+
+  const applyListPrefix = useCallback(() => {
+    if (!activeField) return
+    const { index, field } = activeField
+    const card = manualCards[index]
+    if (!card) return
+    const value = card[field] ?? ''
+    const nextValue = value.trimStart().startsWith('- ') ? value : `- ${value}`
+    updateCard(index, field, nextValue)
+  }, [activeField, manualCards, updateCard])
+
   const removeCard = useCallback((index) => {
-    setManualCards(prev => prev.filter((_, i) => i !== index))
+    setManualCards((prev) => {
+      const next = prev.filter((_, i) => i !== index)
+
+      // Adjust activeField so the toolbar doesn't break after re-indexing.
+      setActiveField((current) => {
+        if (!next.length) return { index: 0, field: 'front' }
+        if (current.index === index) {
+          // Removed the active card → prefer the card that is now at the same visual position (previous one).
+          const newIdx = Math.max(0, Math.min(index, next.length - 1))
+          return { index: newIdx, field: current.field }
+        }
+        if (current.index > index) {
+          return { ...current, index: current.index - 1 }
+        }
+        return current
+      })
+
+      // Clean up any stale input refs for the removed row.
+      cardInputRefs.current.delete(`${index}:front`)
+      cardInputRefs.current.delete(`${index}:back`)
+
+      return next
+    })
   }, [setManualCards])
 
   const addCard = useCallback(() => {
@@ -330,6 +459,72 @@ export default function Step1DataEntry({
         <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">
           {t('autoSaved')}
         </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+          {t('markupHint')}
+        </p>
+        <div
+          className="mb-4 flex flex-wrap items-center gap-2"
+          role="toolbar"
+          aria-label={t('markupToolbar')}
+        >
+          <span className="text-[0.7rem] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            {t('markupToolbar')}
+          </span>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={() => applyInlineMarkup('**', '**', 'bold')}
+            title={t('markupBold')}
+            aria-label={t('markupBold')}
+          >
+            B
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs italic text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={() => applyInlineMarkup('*', '*', 'italic')}
+            title={t('markupItalic')}
+            aria-label={t('markupItalic')}
+          >
+            I
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={() => applyInlineMarkup('~~', '~~', 'text')}
+            title={t('markupStrikethrough')}
+            aria-label={t('markupStrikethrough')}
+          >
+            S
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs font-mono text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={() => applyInlineMarkup('`', '`', 'code')}
+            title={t('markupCode')}
+            aria-label={t('markupCode')}
+          >
+            {'</>'}
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={applyLinkMarkup}
+            title={t('markupLink')}
+            aria-label={t('markupLink')}
+          >
+            Link
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+            onClick={applyListPrefix}
+            title={t('markupList')}
+            aria-label={t('markupList')}
+          >
+            • List
+          </button>
+        </div>
 
         <div
           ref={manualListRef}
@@ -350,6 +545,8 @@ export default function Step1DataEntry({
               frontPlaceholder={t('front')}
               backPlaceholder={t('back')}
               removePlaceholder={t('remove')}
+              onFocusField={(index, field) => setActiveField({ index, field })}
+              registerInputRef={registerInputRef}
             />
           ))}
         </div>

@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- Modern PWA meta tags (replaces deprecated apple-mobile-web-app-capable) -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-title" content="Flashcards">
+    <!-- Theme color that follows the user's light/dark preference -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
     <title>Flashcard Generator</title>
     <meta name="description" content="Generate duplex-ready flashcards from CSV or manual entry. Print double-sided with perfect alignment.">
     <link rel="manifest" href="/manifest.json">

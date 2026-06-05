@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { Button } from './catalyst/button'
 import { Subheading } from './catalyst/heading'

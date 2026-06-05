@@ -23,6 +23,8 @@
     height: 297mm;
     box-sizing: border-box;
   }
+  .flashcard-container.grid-2x6 { grid-template-rows: repeat(6, 1fr); }
+  .flashcard-container.grid-2x5 { grid-template-rows: repeat(5, 1fr); }
   .flashcard-container.grid-2x4 { grid-template-rows: repeat(4, 1fr); }
   .flashcard-container.grid-2x3 { grid-template-rows: repeat(3, 1fr); }
 
@@ -36,7 +38,15 @@
     color: #000; font-family: 'Inter', sans-serif;
   }
   .flashcard-front { background: #fff; }
-  .flashcard-back  { background: #f5f5f5; }
+  .flashcard-back  {
+    background: #f4f4f5;
+    /* Very faint pattern for clear front/back distinction when printed */
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(0,0,0,0.018) 0 1px,
+      transparent 1px 4px
+    );
+  }
 }
 
 /* ── Screen preview cards ────────────────────────────────────── */
@@ -50,6 +60,8 @@
     border-radius: 0.75rem;
   }
   .flashcard-container + .flashcard-container { margin-top: 0.75rem; }
+  .flashcard-container.grid-2x6 { grid-template-rows: repeat(6, 1fr); }
+  .flashcard-container.grid-2x5 { grid-template-rows: repeat(5, 1fr); }
   .flashcard-container.grid-2x4 { grid-template-rows: repeat(4, 1fr); }
   .flashcard-container.grid-2x3 { grid-template-rows: repeat(3, 1fr); }
 
@@ -81,6 +93,37 @@
   }
   .flashcard-text {
     max-width: 100%;
+    line-height: 1.35;
+  }
+  /* Markup element styles for .flashcard-text are defined once in CARD_MARKUP_CSS (src/js/utils.js)
+     and inlined into the print popup. The rules below provide the screen/dark-mode overrides. */
+  .flashcard-text strong {
+    font-weight: 700;
+  }
+  .flashcard-text em {
+    font-style: italic;
+  }
+  .flashcard-text s {
+    text-decoration: line-through;
+  }
+  .flashcard-text code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.9em;
+    padding: 0.08em 0.25em;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--color-zinc-300) 25%, transparent);
+  }
+  .flashcard-text ul {
+    margin: 0;
+    padding-left: 1.1em;
+    text-align: left;
+  }
+  .flashcard-text li {
+    margin: 0.1em 0;
+  }
+  .flashcard-text a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .flashcard-icon {
     position: absolute;
@@ -103,10 +146,25 @@
   .flashcard-back {
     color: var(--color-zinc-600);
     transform: rotateY(180deg);
+    /* Subtle pattern to visually distinguish the back/answer side */
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.028) 0,
+      rgba(0, 0, 0, 0.028) 1px,
+      transparent 1px,
+      transparent 5px
+    );
   }
   :where(.dark, .dark *) .flashcard-back {
     color: var(--color-zinc-400);
     transform: rotateY(180deg);
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 5px
+    );
   }
 }
 

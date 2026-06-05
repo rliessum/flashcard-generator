@@ -72,6 +72,27 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    strictPort: true,
+
+    // HMR (Hot Module Replacement) configuration.
+    // We use a dedicated WebSocket port (24678) because running both HTTP + HMR
+    // on port 3000 frequently causes connection failures behind proxies, VPNs,
+    // corporate networks, or certain macOS / firewall configurations.
+    hmr: {
+      port: 24678,        // Dedicated HMR WebSocket port (separate from the HTTP dev server)
+      host: 'localhost',  // Explicit host reduces "localhost vs 127.0.0.1" mismatches
+      overlay: true,      // Show a nice full-screen error overlay on compile/runtime errors
+      // protocol: 'ws',  // Force unencrypted WS only if you have SSL termination issues
+    },
+
+    // Helps with some corporate proxy / CORS scenarios during development
+    cors: true,
+
+    // File watching options — can be tuned if you experience slow or missed HMR updates
+    watch: {
+      usePolling: false, // Set to true only if you're on a network filesystem (e.g. Docker on macOS)
+      interval: 100,
+    },
   },
 
   preview: {

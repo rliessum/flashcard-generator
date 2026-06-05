@@ -1,7 +1,12 @@
-// Flashcard Generator — Service Worker
-// Cache-first for app shell, network-first for external resources
+// Flashcard Generator — Service Worker (Offline-first)
+// - Cache-first for all same-origin assets (strong offline support after first visit)
+// - Stale-while-revalidate for Google Fonts
+// - SPA navigation fallback to index.html when offline
 
+// NOTE: The actual cache name is rewritten at build time by the sw-cache-bust plugin
+// in vite.config.js to include a hash of the current assets.
 const CACHE_NAME = 'flashcards-v4';
+
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -11,6 +16,11 @@ const APP_SHELL = [
   '/icons/favicon-32.png',
   '/icons/favicon-16.png',
   '/icons/apple-touch-icon.png',
+  // Sample data for offline use
+  '/data/sample.csv',
+  '/data/duits.csv',
+  // Note: Vite hashed assets (JS/CSS in /assets/) are cached at runtime on first visit
+  // for strong offline support after the initial load.
 ];
 const EXTERNAL_URLS = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
@@ -58,18 +68,31 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // App shell: cache-first
+  // Same-origin requests: cache-first with fallback for SPA navigation
   if (url.origin === self.location.origin) {
     e.respondWith(
       caches.match(e.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(e.request).then((response) => {
-          if (response.ok && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-          }
-          return response;
-        });
+        if (cached) {
+          return cached;
+        }
+
+        return fetch(e.request)
+          .then((response) => {
+            // Only cache successful basic responses
+            if (response.ok && response.type === 'basic') {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+            }
+            return response;
+          })
+          .catch(() => {
+            // Offline fallback for navigation requests (SPA)
+            if (e.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+            // For other requests (JS, CSS, images), just fail gracefully
+            return new Response(null, { status: 504, statusText: 'Offline' });
+          });
       })
     );
     return;

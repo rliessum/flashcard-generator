@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   escapeHtml,
+  formatCardMarkup,
   csvEscape,
   shuffle,
   swapSides,
@@ -46,6 +47,119 @@ describe('escapeHtml', () => {
     expect(escapeHtml('<a href="x">&</a>')).toBe(
       '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;'
     );
+  });
+});
+
+describe('formatCardMarkup', () => {
+  it('renders bold and italic markup', () => {
+    expect(formatCardMarkup('**bold** and *italic*')).toBe('<strong>bold</strong> and <em>italic</em>');
+  });
+
+  it('keeps unknown HTML escaped', () => {
+    expect(formatCardMarkup('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+  });
+
+  it('supports line breaks', () => {
+    expect(formatCardMarkup('line 1\nline 2')).toBe('line 1<br />line 2');
+  });
+
+  it('renders safe http links', () => {
+    expect(formatCardMarkup('[site](https://example.com)')).toContain('<a href="https://example.com"');
+  });
+
+  it('renders bullet lists', () => {
+    expect(formatCardMarkup('- one\n- two')).toBe('<ul><li>one</li><li>two</li></ul>');
+  });
+
+  it('renders __bold__ and _italic_ variants', () => {
+    expect(formatCardMarkup('__bold__ and _italic_')).toBe('<strong>bold</strong> and <em>italic</em>');
+  });
+
+  it('keeps markup literal inside code spans (no inner formatting)', () => {
+    expect(formatCardMarkup('`**not bold**`')).toBe('<code>**not bold**</code>');
+    expect(formatCardMarkup('`*code*`')).toBe('<code>*code*</code>');
+  });
+
+  it('does not create links with dangerous characters in the URL (quote breaks the regex match after escape)', () => {
+    const html = formatCardMarkup('[x](https://ex.com/" onclick="alert(1))');
+    // Because " becomes &quot; before the link regex runs, the URL no longer matches the pattern.
+    // Result: the dangerous payload stays as plain (escaped) text — safe.
+    expect(html).not.toContain('<a');
+    // The literal word "onclick" may appear inside the escaped text content (safe).
+    // The important thing is no <a href="...onclick..."> was ever emitted.
+    expect(html).toContain('https://ex.com/&quot;');
+  });
+
+  it('supports links with query strings and fragments', () => {
+    const html = formatCardMarkup('[ref](https://ex.com/a?b=1#sec)');
+    expect(html).toContain('<a href="https://ex.com/a?b=1#sec"');
+  });
+
+  it('renders lists containing inline markup', () => {
+    const html = formatCardMarkup('- **bold** item\n- `code` item');
+    expect(html).toBe('<ul><li><strong>bold</strong> item</li><li><code>code</code> item</li></ul>');
+  });
+
+  it('handles mixed formatting and links', () => {
+    expect(formatCardMarkup('**bold [link](https://x.com)**')).toContain('<strong>bold <a href="https://x.com"');
+  });
+
+  it('applies inline formatting inside link labels (current design)', () => {
+    const html = formatCardMarkup('[see **this** page](https://ex.com)');
+    expect(html).toContain('<a href="https://ex.com" target="_blank" rel="noreferrer noopener">see <strong>this</strong> page</a>');
+  });
+
+  it('leaves unclosed delimiters literal (regex requires matching closer)', () => {
+    expect(formatCardMarkup('**open bold')).toBe('**open bold');
+    expect(formatCardMarkup('`open code')).toBe('`open code');
+  });
+
+  it('produces safe output for attempted XSS in various positions', () => {
+    const bad = '<img src=x onerror=alert(1)> **bold** `code` [x](javascript:alert(2))';
+    const out = formatCardMarkup(bad);
+    expect(out).not.toContain('<img');
+    expect(out).not.toContain('<a href="javascript:');
+    // Dangerous attribute/event payloads remain as literal (escaped) text — never turned into executable HTML.
+    expect(out).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(out).toContain('javascript:alert(2)');
+    expect(out).toContain('<strong>bold</strong>');
+  });
+
+  // Additional adversarial & edge case coverage
+  it('handles multiple lists and paragraphs correctly', () => {
+    const input = '- first\n- second\n\nSome text after\n- another list';
+    const html = formatCardMarkup(input);
+    expect(html).toContain('<ul><li>first</li><li>second</li></ul>');
+    expect(html).toContain('Some text after');
+    expect(html).toContain('<ul><li>another list</li></ul>');
+  });
+
+  it('escapes dangerous content inside lists', () => {
+    const html = formatCardMarkup('- <script>alert(1)</script>');
+    expect(html).not.toContain('<script');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('supports very long input without crashing', () => {
+    const long = 'word '.repeat(2000) + '**bold**';
+    const html = formatCardMarkup(long);
+    expect(html).toContain('<strong>bold</strong>');
+  });
+
+  it('handles mixed ** and __ on same line', () => {
+    expect(formatCardMarkup('**bold** and __also bold__')).toBe('<strong>bold</strong> and <strong>also bold</strong>');
+  });
+
+  it('does not break on empty or whitespace-only input', () => {
+    expect(formatCardMarkup('')).toBe('');
+    // Whitespace-only input is preserved as text + breaks (acceptable behavior)
+    const ws = formatCardMarkup('   \n\n  ');
+    expect(ws).toContain('<br />');
+  });
+
+  it('preserves order of complex mixed markup', () => {
+    const html = formatCardMarkup('**bold** `code` *italic* [link](https://x.com) ~~strike~~');
+    expect(html).toMatch(/<strong>bold<\/strong>.*<code>code<\/code>.*<em>italic<\/em>.*<a href="https:\/\/x.com".*strike/);
   });
 });
 

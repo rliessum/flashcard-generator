@@ -1,7 +1,7 @@
 /**
  * Card generation and layout module for the Flashcard Generator
  */
-import { escapeHtml, clampFontSize } from './utils.js';
+import { clampFontSize, formatCardMarkup } from './utils.js';
 import { DEFAULT_HEROICON_ID, getHeroiconPrintMarkup } from './heroicons.js';
 
 /**
@@ -30,7 +30,7 @@ export function cardHTML(card, side, fontSize, iconId = DEFAULT_HEROICON_ID) {
   const cls = side === 'front' ? 'flashcard-front' : 'flashcard-back';
   const pt = clampFontSize(fontSize);
   const iconMarkup = getHeroiconPrintMarkup(iconId);
-  return `<div class="flashcard ${cls}" style="font-size:${pt}pt">${iconMarkup}<span class="flashcard-text">${escapeHtml(card[side])}</span></div>`;
+  return `<div class="flashcard ${cls}" style="font-size:${pt}pt">${iconMarkup}<span class="flashcard-text">${formatCardMarkup(card[side])}</span></div>`;
 }
 
 /**
@@ -44,7 +44,7 @@ export function previewCardHTML(card, fontSize) {
     return '<div class="flip-card"><div class="flip-card-inner"><div class="flashcard flashcard-front"></div><div class="flashcard flashcard-back"></div></div></div>';
   }
   const pt = clampFontSize(fontSize);
-  return `<div class="flip-card" title="Click to flip"><div class="flip-card-inner"><div class="flashcard flashcard-front" style="font-size:${pt}pt">${escapeHtml(card.front)}</div><div class="flashcard flashcard-back" style="font-size:${pt}pt">${escapeHtml(card.back)}</div></div></div>`;
+  return `<div class="flip-card" title="Click to flip"><div class="flip-card-inner"><div class="flashcard flashcard-front" style="font-size:${pt}pt">${formatCardMarkup(card.front)}</div><div class="flashcard flashcard-back" style="font-size:${pt}pt">${formatCardMarkup(card.back)}</div></div></div>`;
 }
 
 /**
@@ -53,13 +53,13 @@ export function previewCardHTML(card, fontSize) {
  * @param {'front'|'back'} side
  * @param {object} opts
  * @param {number} opts.cardsPerPage
- * @param {string} opts.gridLayout - '2x3' or '2x4'
+ * @param {string} opts.gridLayout - e.g. '2x3', '2x4', '2x5', '2x6'
  * @param {number} opts.fontSize
  * @returns {string}
  */
 export function buildPageHTML(flashcards, side, { cardsPerPage, gridLayout, fontSize }) {
   const pages = Math.ceil(flashcards.length / cardsPerPage);
-  const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4';
+  const gridCls = `grid-${gridLayout}`;
   let html = '';
   for (let p = 0; p < pages; p++) {
     html += `<div class="flashcard-container ${gridCls}">`;
@@ -83,7 +83,7 @@ export function buildPageHTML(flashcards, side, { cardsPerPage, gridLayout, font
  */
 export function buildDuplexHTML(flashcards, { cardsPerPage, gridLayout, fontSize, cols = 2, iconId = DEFAULT_HEROICON_ID }) {
   const pages = Math.ceil(flashcards.length / cardsPerPage);
-  const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4';
+  const gridCls = `grid-${gridLayout}`;
   const rows = cardsPerPage / cols;
   let html = '';
   for (let p = 0; p < pages; p++) {
@@ -115,7 +115,7 @@ export function buildDuplexHTML(flashcards, { cardsPerPage, gridLayout, fontSize
  */
 export function buildPreviewHTML(flashcards, { cardsPerPage, gridLayout, fontSize }) {
   const pages = Math.ceil(flashcards.length / cardsPerPage);
-  const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4';
+  const gridCls = `grid-${gridLayout}`;
   let html = '';
   for (let p = 0; p < pages; p++) {
     html += `<div class="flashcard-container ${gridCls}">`;

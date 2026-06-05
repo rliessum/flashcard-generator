@@ -1,11 +1,12 @@
-import React, { useState, useCallback, lazy, Suspense } from 'react'
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { parseCSV, countDuplicates, buildCSVString } from './js/csv'
-import { shuffle as shuffleArray, swapSides, csvEscape, escapeHtml, exceedsCsvLimit } from './js/utils'
+import { shuffle as shuffleArray, swapSides, csvEscape, exceedsCsvLimit } from './js/utils'
 import { isSupported } from './js/i18n'
-import { buildDuplexHTML } from './js/cards'
+import { generatePrintDocument } from './js/print'
 import { I18nProvider, useI18n } from './hooks/useI18n'
 import { ToastProvider, useToast } from './hooks/useToast'
 import { useFlashcards } from './hooks/useFlashcards'
+import { useOnlineStatus } from './hooks/useOnlineStatus'
 import StepNav from './components/StepNav'
 import Step1DataEntry from './components/Step1DataEntry'
 import ThemeToggle from './components/ThemeToggle'
@@ -29,6 +30,80 @@ function StepLoadingFallback() {
 function AppInner() {
   const { lang, t } = useI18n()
   const { addToast } = useToast()
+  const isOnline = useOnlineStatus()
+
+  // PWA Install prompt (Add to Home Screen)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+
+  // Service Worker update handling
+  useEffect(() => {
+    const handleUpdate = () => {
+      addToast(
+        'A new version is available.',
+        'info',
+        8000,
+        {
+          label: 'Reload now',
+          onClick: () => window.location.reload(),
+          dismiss: true
+        }
+      )
+    }
+
+    const handleControllerChange = () => {
+      addToast('Update installed.', 'success', 4000, {
+        label: 'Reload',
+        onClick: () => window.location.reload()
+      })
+    }
+
+    window.addEventListener('sw-update-available', handleUpdate)
+    window.addEventListener('sw-controller-changed', handleControllerChange)
+
+    const handleStorageQuota = () => {
+      addToast('Storage is full. Your cards may not save. Try clearing some data.', 'warning')
+    }
+    window.addEventListener('storage-quota-exceeded', handleStorageQuota)
+
+    return () => {
+      window.removeEventListener('sw-update-available', handleUpdate)
+      window.removeEventListener('sw-controller-changed', handleControllerChange)
+      window.removeEventListener('storage-quota-exceeded', handleStorageQuota)
+    }
+  }, [addToast])
+
+  // PWA "Add to Home Screen" / Install prompt handling
+  useEffect(() => {
+    // Detect if already running as installed PWA
+    const checkInstalled = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator && window.navigator.standalone === true)
+      setIsInstalled(standalone)
+    }
+    checkInstalled()
+
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault()
+      // Stash the event so it can be triggered later
+      setDeferredPrompt(e)
+    }
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true)
+      setDeferredPrompt(null)
+      addToast('App installed successfully. Thanks!', 'success')
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [addToast])
 
   // ── State ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(1)
@@ -47,7 +122,8 @@ function AppInner() {
     hasAnyCards,
   } = useFlashcards()
 
-  const cardsPerPage = gridLayout === '2x3' ? 6 : 8
+  // cardsPerPage is derived from the selected grid layout (2 columns × N rows)
+  const cardsPerPage = ({ '2x3': 6, '2x5': 10, '2x6': 12 }[gridLayout] ?? 8)
 
   // ── Step navigation ────────────────────────────────────────
   const goToStep = useCallback((step) => {
@@ -144,61 +220,14 @@ function AppInner() {
 
   // ── Print ──────────────────────────────────────────────────
   const handlePrint = useCallback(() => {
-    const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4'
-    const html = buildDuplexHTML(flashcards, {
-      cardsPerPage, gridLayout, fontSize: printFontSize, iconId: selectedIconId,
+    const doc = generatePrintDocument(flashcards, {
+      cardsPerPage,
+      gridLayout,
+      fontSize: printFontSize,
+      iconId: selectedIconId,
+      lang,
+      t,
     })
-
-    const printLang = isSupported(lang) ? lang : 'en'
-    const doc = `<!DOCTYPE html>
-<html lang="${printLang}">
-<head>
-<meta charset="UTF-8">
-<title>${escapeHtml(t('title'))}</title>
-<style>
-  @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: #fff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .flashcard-container {
-    page-break-after: always;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10mm; padding: 15mm;
-    width: 210mm; height: 297mm;
-  }
-  .flashcard-container.grid-2x4 { grid-template-rows: repeat(4, 1fr); }
-  .flashcard-container.grid-2x3 { grid-template-rows: repeat(3, 1fr); }
-  .flashcard {
-    width: 100%; height: 100%;
-    border: 1px solid #000;
-    position: relative;
-    display: flex; align-items: center; justify-content: center;
-    text-align: center; padding: 8mm;
-    page-break-inside: avoid;
-    color: #000; font-family: inherit;
-  }
-  .flashcard-text {
-    display: block;
-    max-width: 100%;
-  }
-  .flashcard-icon {
-    position: absolute;
-    top: 4mm;
-    right: 4mm;
-    width: 6mm;
-    height: 6mm;
-    color: #52525b;
-  }
-  .flashcard-icon svg {
-    width: 100%;
-    height: 100%;
-  }
-  .flashcard-front { background: #fff; }
-  .flashcard-back  { background: #f5f5f5; }
-</style>
-</head>
-<body>${html}</body>
-</html>`
 
     // Use a Blob URL instead of document.write — the popup loads its own
     // same-origin document, so it inherits a strict CSP and avoids the
@@ -208,34 +237,104 @@ function AppInner() {
     const win = window.open(url, '_blank')
     if (!win) {
       URL.revokeObjectURL(url)
-      addToast(t('popupBlocked') || 'Popup blocked', 'error')
+      addToast(t('popupBlocked') || 'Popup blocked. Please allow popups for this site.', 'error')
       return
     }
+
+    // More robust print trigger: wait for fonts + load, then print.
+    // Also inject a visible "Print" button inside the popup as a fallback
+    // for cases where window.print() is blocked or unreliable.
     const triggerPrint = () => {
-      const printNow = () => { win.focus(); win.print() }
-      if (win.document.fonts?.ready) {
-        win.document.fonts.ready.then(printNow).catch(printNow)
-      } else {
-        setTimeout(printNow, 100)
+      const printNow = () => {
+        try {
+          win.focus()
+          win.print()
+        } catch {
+          // Some browsers block programmatic print; the button below remains available
+        }
       }
+
+      const doPrint = () => {
+        if (win.document.fonts?.ready) {
+          win.document.fonts.ready.then(printNow).catch(printNow)
+        } else {
+          setTimeout(printNow, 120)
+        }
+      }
+
+      // Inject a small print button at the top of the popup (helpful fallback)
+      try {
+        const btn = win.document.createElement('button')
+        btn.textContent = 'Print now'
+        btn.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9999;padding:6px 14px;border:1px solid #ccc;background:#fff;font-size:13px;border-radius:4px;cursor:pointer;'
+        btn.onclick = () => {
+          btn.style.display = 'none'
+          printNow()
+        }
+        win.document.body.prepend(btn)
+      } catch {}
+
+      doPrint()
     }
+
     const cleanup = () => URL.revokeObjectURL(url)
-    if (win.document.readyState === 'complete') {
+
+    const onReady = () => {
       triggerPrint()
-      setTimeout(cleanup, 5000)
+      setTimeout(cleanup, 8000)
+    }
+
+    if (win.document.readyState === 'complete') {
+      onReady()
     } else {
-      win.addEventListener('load', () => { triggerPrint(); setTimeout(cleanup, 5000) }, { once: true })
+      win.addEventListener('load', onReady, { once: true })
     }
   }, [flashcards, cardsPerPage, gridLayout, printFontSize, selectedIconId, lang, t, addToast])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return
+
+    // Show the native install prompt
+    deferredPrompt.prompt()
+
+    const { outcome } = await deferredPrompt.userChoice
+
+    if (outcome === 'accepted') {
+      addToast('Installing the app...', 'success')
+    } else {
+      addToast('Installation dismissed', 'warning')
+    }
+
+    // Clear the deferred prompt since it can only be used once
+    setDeferredPrompt(null)
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-100 font-sans transition-colors duration-200">
       <div className="no-print">
         {/* ── Header ──────────────────────────────────────────── */}
         <header className="text-center pt-12 sm:pt-16 pb-6 px-4">
-          <div className="flex justify-end items-center gap-2 mb-4 max-w-3xl mx-auto">
-            <ThemeToggle />
-            <LanguagePicker />
+          <div className="flex justify-between items-center gap-2 mb-4 max-w-3xl mx-auto px-1">
+            <div>
+              {!isOnline && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> OFFLINE
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {!isInstalled && deferredPrompt && hasAnyCards && (
+                <button
+                  onClick={handleInstallClick}
+                  className="rounded-lg border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+                  title="Install this app for quick access and offline use"
+                >
+                  Install
+                </button>
+              )}
+              <ThemeToggle />
+              <LanguagePicker />
+            </div>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-950 dark:text-white uppercase">
             {t('title')}

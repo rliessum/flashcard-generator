@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { Button } from './catalyst/button'
 import { Select } from './catalyst/select'
 import { Heading, Subheading } from './catalyst/heading'
 import { Badge } from './catalyst/badge'
-import { escapeHtml } from '../js/utils'
+import { formatCardMarkup } from '../js/utils'
 import HeroiconGlyph from './HeroiconGlyph'
 import clsx from 'clsx'
 
@@ -42,14 +42,14 @@ function ChevronRightIcon(props) {
 }
 
 // ── Flashcard Preview Grid ───────────────────────────────────
-const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize, selectedIconId }) {
+const FlashcardGrid = memo(function FlashcardGrid({ flashcards, cardsPerPage, gridLayout, fontSize, selectedIconId }) {
   const [flippedCards, setFlippedCards] = useState(new Set())
   const [showSide, setShowSide] = useState('front') // 'front' | 'back' | null
   const { t } = useI18n()
   const fontStyle = useMemo(() => ({ fontSize: `${fontSize}pt` }), [fontSize])
 
   const pages = Math.ceil(flashcards.length / cardsPerPage)
-  const gridCls = gridLayout === '2x3' ? 'grid-2x3' : 'grid-2x4'
+  const gridCls = `grid-${gridLayout}`
 
   const toggleCard = useCallback((idx) => {
     setFlippedCards(prev => {
@@ -133,23 +133,38 @@ const FlashcardGrid = React.memo(function FlashcardGrid({ flashcards, cardsPerPa
                 key={i}
                 className={clsx('flip-card', flippedCards.has(idx) && 'flipped')}
                 onClick={() => toggleCard(idx)}
-                title="Click to flip"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    toggleCard(idx)
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Flashcard ${idx + 1}. Press Enter or Space to flip.`}
+                title="Click or press Enter/Space to flip"
               >
                 <div className="flip-card-inner">
                   <div
                     className="flashcard flashcard-front bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700"
                     style={fontStyle}
                   >
-                    <span className="flashcard-text">{card.front}</span>
+                    <span
+                      className="flashcard-text"
+                      dangerouslySetInnerHTML={{ __html: formatCardMarkup(card.front) }}
+                    />
                     <span className="flashcard-icon text-zinc-300 dark:text-zinc-600">
                       <HeroiconGlyph iconId={selectedIconId} className="w-4 h-4" />
                     </span>
                   </div>
                   <div
-                    className="flashcard flashcard-back bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700"
+                    className="flashcard flashcard-back bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700"
                     style={fontStyle}
                   >
-                    <span className="flashcard-text">{card.back}</span>
+                    <span
+                      className="flashcard-text"
+                      dangerouslySetInnerHTML={{ __html: formatCardMarkup(card.back) }}
+                    />
                     <span className="flashcard-icon text-zinc-300 dark:text-zinc-600">
                       <HeroiconGlyph iconId={selectedIconId} className="w-4 h-4" />
                     </span>
@@ -222,6 +237,8 @@ export default function Step2Preview({
               aria-label="Grid layout"
               className="w-auto!"
             >
+              <option value="2x6">{t('grid2x6')}</option>
+              <option value="2x5">{t('grid2x5')}</option>
               <option value="2x4">{t('grid2x4')}</option>
               <option value="2x3">{t('grid2x3')}</option>
             </Select>

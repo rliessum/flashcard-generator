@@ -21,7 +21,24 @@ export default function ToastContainer() {
             toast.type === 'warning' && 'border-l-4 !border-l-amber-500',
           )}
         >
-          <span className="text-zinc-600 dark:text-zinc-400">{toast.message}</span>
+          <div className="flex items-start justify-between gap-3">
+            <span className="text-zinc-600 dark:text-zinc-400">{toast.message}</span>
+            {toast.action && (
+              <button
+                onClick={() => {
+                  toast.action.onClick?.()
+                  // Optionally auto-dismiss after action
+                  if (toast.action.dismiss !== false) {
+                    // We can't easily call removeToast here without more refactoring,
+                    // but the action itself can trigger a reload which is fine for SW case.
+                  }
+                }}
+                className="shrink-0 text-sm font-medium text-zinc-950 dark:text-white underline underline-offset-2 hover:no-underline"
+              >
+                {toast.action.label}
+              </button>
+            )}
+          </div>
         </div>
       ))}
     </div>

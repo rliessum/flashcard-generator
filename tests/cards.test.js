@@ -86,6 +86,11 @@ describe('cardHTML', () => {
     expect(html).not.toContain('<b>bold</b>');
   });
 
+  it('renders supported markup in card content', () => {
+    const html = cardHTML({ front: '**bold**', back: '*italic*' }, 'front', 18);
+    expect(html).toContain('<strong>bold</strong>');
+  });
+
   it('handles special characters', () => {
     const html = cardHTML({ front: 'Tom & Jerry', back: 'test' }, 'front', 18);
     expect(html).toContain('Tom &amp; Jerry');
@@ -120,6 +125,29 @@ describe('previewCardHTML', () => {
   it('includes font size', () => {
     const html = previewCardHTML({ front: 'a', back: 'b' }, 22);
     expect(html).toContain('font-size:22pt');
+  });
+
+  it('renders markup in preview card HTML', () => {
+    const html = previewCardHTML({ front: '~~x~~', back: '`y`' }, 18);
+    expect(html).toContain('<s>x</s>');
+    expect(html).toContain('<code>y</code>');
+  });
+});
+
+describe('build*HTML with markup (integration)', () => {
+  it('buildDuplexHTML and buildPreviewHTML include formatted markup and never raw scripts', () => {
+    const cards = [{ front: '**b** `c` [l](https://x.com)', back: '- item with *em*' }];
+    const duplex = buildDuplexHTML(cards, { cardsPerPage: 8, gridLayout: '2x4', fontSize: 12 });
+    const preview = buildPreviewHTML(cards, { cardsPerPage: 8, gridLayout: '2x4', fontSize: 12 });
+
+    expect(duplex).toContain('<strong>b</strong>');
+    expect(duplex).toContain('<code>c</code>');
+    expect(duplex).toContain('<a href="https://x.com"');
+    expect(duplex).toContain('<ul><li>item with <em>em</em></li></ul>');
+
+    expect(preview).toContain('<strong>b</strong>');
+    expect(preview).not.toContain('<script');
+    expect(duplex).not.toContain('<script');
   });
 });
 

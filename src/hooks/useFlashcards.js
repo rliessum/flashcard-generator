@@ -40,8 +40,12 @@ export function useFlashcards() {
     const timer = setTimeout(() => {
       try {
         localStorage.setItem('fc_manual', JSON.stringify(manualCards))
-      } catch {
-        // Ignore storage quota/private mode errors.
+      } catch (err) {
+        // Handle storage quota or private mode errors more explicitly
+        if (err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          console.warn('[Flashcards] localStorage quota exceeded — cards will not persist.')
+          window.dispatchEvent(new CustomEvent('storage-quota-exceeded'))
+        }
       }
     }, 400)
     return () => clearTimeout(timer)

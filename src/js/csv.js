@@ -1,5 +1,5 @@
 /**
- * CSV parsing module for the Flashcard Generator
+ * CSV parsing module for Ultimate Flashcards
  */
 
 /**

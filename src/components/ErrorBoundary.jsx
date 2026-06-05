@@ -57,7 +57,7 @@ export default class ErrorBoundary extends React.Component {
   handleCopyError = async () => {
     const { error, errorInfo } = this.state
     const text = [
-      'Flashcard Generator Error Report',
+      'Ultimate Flashcards Error Report',
       '--------------------------------',
       `Time: ${new Date().toISOString()}`,
       `User Agent: ${navigator.userAgent}`,

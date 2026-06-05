@@ -1,37 +1,15 @@
 import React from 'react'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import App from '../src/App'
 
-function createStorageMock() {
-  let store = {}
-  return {
-    getItem(key) {
-      return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null
-    },
-    setItem(key, value) {
-      store[key] = String(value)
-    },
-    removeItem(key) {
-      delete store[key]
-    },
-    clear() {
-      store = {}
-    },
-  }
-}
-
 describe('App flow regression tests', () => {
   beforeEach(() => {
-    if (!globalThis.localStorage) {
-      Object.defineProperty(globalThis, 'localStorage', {
-        value: createStorageMock(),
-        configurable: true,
-        writable: true,
-      })
+    // localStorage, matchMedia, and scrollTo are provided by tests/setup.js
+    // Ensure clean state for each test (the global mock supports .clear())
+    if (globalThis.localStorage && typeof globalThis.localStorage.clear === 'function') {
+      globalThis.localStorage.clear()
     }
-    globalThis.localStorage.clear()
-    window.scrollTo = vi.fn()
   })
 
   it('allows continuing after CSV import and returning to step 1', async () => {

@@ -398,7 +398,7 @@ function AppInner() {
         {/* ── Footer ──────────────────────────────────────────── */}
         <footer className="text-center py-8 px-4">
           <p className="text-xs font-medium tracking-wider uppercase text-zinc-400 dark:text-zinc-500">
-            Flashcard Generator &copy; 2026
+            Ultimate Flashcards &copy; 2026
           </p>
         </footer>
       </div>

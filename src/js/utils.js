@@ -1,5 +1,5 @@
 /**
- * Utility functions for the Flashcard Generator
+ * Utility functions for Ultimate Flashcards
  */
 
 /** Max CSV upload size (2 MB) — limits memory use from pasted/uploaded files */

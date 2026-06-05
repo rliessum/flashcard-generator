@@ -56,7 +56,7 @@ describe('isSupported', () => {
 
 describe('t()', () => {
   it('returns English translation for known key', () => {
-    expect(t('en', 'title')).toBe('Flashcard Generator');
+    expect(t('en', 'title')).toBe('Ultimate Flashcards');
   });
 
   it('returns Dutch translation', () => {
@@ -78,7 +78,7 @@ describe('t()', () => {
   it('falls back to English for missing key in language', () => {
     // All languages have a 'title', but if a hypothetical key is missing
     // from a specific language, it should fall back to English
-    expect(t('nl', 'title')).toBe('Flashcard Generator');
+    expect(t('nl', 'title')).toBe('Ultimate Flashcards');
   });
 
   it('returns the key itself if not found in any language', () => {
@@ -86,7 +86,7 @@ describe('t()', () => {
   });
 
   it('falls back to English for unsupported language', () => {
-    expect(t('ja', 'title')).toBe('Flashcard Generator');
+    expect(t('ja', 'title')).toBe('Ultimate Flashcards');
   });
 
   // ── Dynamic translations (functions) ──

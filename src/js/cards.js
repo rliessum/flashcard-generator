@@ -1,5 +1,5 @@
 /**
- * Card generation and layout module for the Flashcard Generator
+ * Card generation and layout module for Ultimate Flashcards
  */
 import { clampFontSize, formatCardMarkup } from './utils.js';
 import { DEFAULT_HEROICON_ID, getHeroiconPrintMarkup } from './heroicons.js';

@@ -1,6 +1,6 @@
-# Flashcard Generator
+# Ultimate Flashcards
 
-A modern, installable PWA for creating duplex-ready flashcards. Upload CSV or type cards manually, preview with flip animation, then print perfectly aligned double-sided pages.
+A modern, installable PWA for creating duplex-ready flashcards at [ultimateflash.cards](https://ultimateflash.cards). Upload CSV or type cards manually, preview with flip animation, then print perfectly aligned double-sided pages.
 
 ## Features
 

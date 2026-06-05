@@ -1,4 +1,4 @@
-// Flashcard Generator — Service Worker (Offline-first)
+// Ultimate Flashcards — Service Worker (Offline-first)
 // - Cache-first for all same-origin assets (strong offline support after first visit)
 // - Stale-while-revalidate for Google Fonts
 // - SPA navigation fallback to index.html when offline

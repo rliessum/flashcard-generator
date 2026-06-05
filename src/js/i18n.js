@@ -1,5 +1,5 @@
 /**
- * Internationalization module for the Flashcard Generator
+ * Internationalization module for Ultimate Flashcards
  */
 
 export const LANGS = {
@@ -12,7 +12,7 @@ export const LANGS = {
 
 export const I18N = {
   en: {
-    title: 'Flashcard Generator',
+    title: 'Ultimate Flashcards',
     uploadCsv: 'Upload CSV',
     duplexInfo:
       '<strong>Duplex Printing:</strong> Click \u201cPrint\u201d and enable \u201cPrint on both sides\u201d in your printer dialog. Pages are pre-arranged for perfect alignment.',
@@ -54,7 +54,7 @@ export const I18N = {
     clickFlip: 'Click a card to flip',
     allFront: 'All Front',
     allBack: 'All Back',
-    footerCopy: 'Flashcard Generator &copy; 2026',
+    footerCopy: 'Ultimate Flashcards &copy; 2026',
     front: 'Front',
     back: 'Back',
     remove: 'Remove',
@@ -106,7 +106,7 @@ export const I18N = {
     cancel: 'Cancel',
   },
   nl: {
-    title: 'Flashcard Generator',
+    title: 'Ultimate Flashcards',
     uploadCsv: 'CSV Uploaden',
     duplexInfo:
       '<strong>Dubbelzijdig printen:</strong> Klik op \u201cPrinten\u201d en schakel \u201cDubbelzijdig afdrukken\u201d in bij je printerinstellingen. Pagina\u2019s zijn voorbereid voor perfecte uitlijning.',
@@ -148,7 +148,7 @@ export const I18N = {
     clickFlip: 'Klik op een kaart om te draaien',
     allFront: 'Alle Voorkanten',
     allBack: 'Alle Achterkanten',
-    footerCopy: 'Flashcard Generator &copy; 2026',
+    footerCopy: 'Ultimate Flashcards &copy; 2026',
     front: 'Voorkant',
     back: 'Achterkant',
     remove: 'Verwijderen',
@@ -199,7 +199,7 @@ export const I18N = {
     cancel: 'Annuleren',
   },
   de: {
-    title: 'Flashcard Generator',
+    title: 'Ultimate Flashcards',
     uploadCsv: 'CSV Hochladen',
     duplexInfo:
       '<strong>Duplexdruck:</strong> Klicke auf \u201eDrucken\u201c und aktiviere \u201eBeidseitig drucken\u201c im Druckerdialog. Seiten sind für perfekte Ausrichtung vorbereitet.',
@@ -241,7 +241,7 @@ export const I18N = {
     clickFlip: 'Karte anklicken zum Umdrehen',
     allFront: 'Alle Vorderseiten',
     allBack: 'Alle Rückseiten',
-    footerCopy: 'Flashcard Generator &copy; 2026',
+    footerCopy: 'Ultimate Flashcards &copy; 2026',
     front: 'Vorderseite',
     back: 'Rückseite',
     remove: 'Entfernen',
@@ -292,7 +292,7 @@ export const I18N = {
     cancel: 'Abbrechen',
   },
   fr: {
-    title: 'Flashcard Generator',
+    title: 'Ultimate Flashcards',
     uploadCsv: 'Importer CSV',
     duplexInfo:
       '<strong>Impression recto-verso :</strong> Cliquez sur \u00ab Imprimer \u00bb et activez \u00ab Imprimer recto-verso \u00bb dans les paramètres. Les pages sont pré-arrangées pour un alignement parfait.',
@@ -334,7 +334,7 @@ export const I18N = {
     clickFlip: 'Cliquez sur une carte pour la retourner',
     allFront: 'Tous les Rectos',
     allBack: 'Tous les Versos',
-    footerCopy: 'Flashcard Generator &copy; 2026',
+    footerCopy: 'Ultimate Flashcards &copy; 2026',
     front: 'Recto',
     back: 'Verso',
     remove: 'Supprimer',
@@ -386,7 +386,7 @@ export const I18N = {
     cancel: 'Annuler',
   },
   es: {
-    title: 'Flashcard Generator',
+    title: 'Ultimate Flashcards',
     uploadCsv: 'Subir CSV',
     duplexInfo:
       '<strong>Impresión a doble cara:</strong> Haz clic en \u201cImprimir\u201d y activa \u201cImprimir a doble cara\u201d en el diálogo de la impresora. Las páginas están preparadas para una alineación perfecta.',
@@ -428,7 +428,7 @@ export const I18N = {
     clickFlip: 'Haz clic en una tarjeta para voltearla',
     allFront: 'Todos los Frentes',
     allBack: 'Todos los Reversos',
-    footerCopy: 'Flashcard Generator &copy; 2026',
+    footerCopy: 'Ultimate Flashcards &copy; 2026',
     front: 'Frente',
     back: 'Reverso',
     remove: 'Eliminar',

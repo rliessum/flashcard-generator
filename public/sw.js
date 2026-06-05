@@ -1,4 +1,4 @@
-// Flashcard Generator — Service Worker
+// Ultimate Flashcards — Service Worker
 // Navigation network-first, static assets stale-while-revalidate
 
 const CACHE_NAME = 'flashcards-vBUILD_HASH';
